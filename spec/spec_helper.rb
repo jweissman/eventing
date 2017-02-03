@@ -4,28 +4,14 @@ require 'pry'
 
 include Eventing
 
-class CoffeeReadyEvent < Event
-  attr_reader :id
-  def initialize(id:)
-    @id = id
-  end
-end
-
-class DrinkPouredEvent < Event
-  attr_reader :beverage_type
-  def initialize(beverage_type:)
-    @beverage_type = beverage_type
-  end
-end
-
-class DrinkDrunkEvent < Event; end
-
+# model
 class Drink
-  attr_accessor :id, :state
+  attr_accessor :id, :state, :kind
 
   def initialize(id:)
     @id = id
     @state = :unprepared
+    @kind = 'coffee'
   end
 
   def self.find(id)
@@ -34,20 +20,59 @@ class Drink
   end
 end
 
+# event
+class DrinkReadyEvent < Event
+  attr_reader :id
+  def initialize(id:)
+    @id = id
+  end
+end
+
+class DrinkPouredEvent < Event
+  attr_reader :id, :beverage_type
+  def initialize(id:, beverage_type:)
+    @id = id
+    @beverage_type = beverage_type
+  end
+end
+
+class DrinkDrunkEvent < Event
+  attr_reader :id
+  def initialize(id:)
+    @id = id
+  end
+end
+
+# ctrl
 class DrinkController
   def prepare!(id:)
     @drink = Drink.find(id)
     @drink.state = :prepared
-    CoffeeReadyEvent.publish!(id: id)
+    DrinkReadyEvent.publish!(id: id)
+  end
+
+  def pour!(id:)
+    @drink = Drink.find(id)
+    @drink.state = :poured
+    DrinkPouredEvent.publish!(id: id, beverage_type: @drink.kind)
+  end
+
+  def drink!(id:)
+    @drink = Drink.find(id)
+    @drink.state = :drunk
+    DrinkDrunkEvent.publish!(id: id)
   end
 end
 
+# observer
 class DrinkObserver
   def ready(event)
     drinks_readied; @drinks_readied << event.id
+    controller.pour!(id: event.id)
   end
 
   def poured(event)
+    controller.drink!(id: event.id)
   end
 
   def drunk(event)
@@ -55,5 +80,10 @@ class DrinkObserver
 
   def drinks_readied
     @drinks_readied ||= []
+  end
+
+  private
+  def controller
+    DrinkController.new
   end
 end

@@ -20,27 +20,27 @@ shared_examples :an_event do |*args|
   end
 end
 
-describe CoffeeReadyEvent do
+describe DrinkReadyEvent do
   it_should_behave_like :an_event, {id: 1}
 end
 
 describe DrinkPouredEvent do
-  it_should_behave_like :an_event, {beverage_type: 'tea'}
+  it_should_behave_like :an_event, {id: 1, beverage_type: 'tea'}
 end
 
 describe DrinkDrunkEvent do
-  it_should_behave_like :an_event
+  it_should_behave_like :an_event, {id: 1}
 end
 
 describe "event pipeline" do
   it 'should chain events together' do
-    CoffeeReadyEvent.subscribe do |event|
-      DrinkPouredEvent.publish!(beverage_type: "coffee")
+    DrinkReadyEvent.subscribe do |event|
+      DrinkPouredEvent.publish!(id: 1, beverage_type: "coffee")
     end
 
     DrinkPouredEvent.subscribe do |drink_poured|
       expect(drink_poured.beverage_type).to eq("coffee")
-      DrinkDrunkEvent.publish!
+      DrinkDrunkEvent.publish!(id: 1)
     end
 
     @drink_was_drunk = false
@@ -48,7 +48,7 @@ describe "event pipeline" do
       @drink_was_drunk = true
     end
 
-    expect { CoffeeReadyEvent.publish!(id: 1) }.to change { @drink_was_drunk }.from(false).to(true)
+    expect { DrinkReadyEvent.publish!(id: 1) }.to change { @drink_was_drunk }.from(false).to(true)
   end
 end
 
@@ -57,11 +57,11 @@ describe 'callbacks on an object' do
   let(:observer) { DrinkObserver.new }
 
   it 'should permit an observer model to listen to events' do
-    CoffeeReadyEvent.subscribe(&observer.method(:ready))
+    DrinkReadyEvent.subscribe(&observer.method(:ready))
     DrinkPouredEvent.subscribe(&observer.method(:poured))
     DrinkDrunkEvent.subscribe(&observer.method(:drunk))
 
     expect { controller.prepare!(id: 1) }.to change { observer.drinks_readied }.by([1])
-    expect( Drink.find(1).state ).to eq(:prepared)
+    expect( Drink.find(1).state ).to eq(:drunk)
   end
 end
