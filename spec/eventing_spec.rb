@@ -20,29 +20,13 @@ shared_examples :an_event do |*args|
   end
 end
 
-class CoffeeReadyEvent < Event
-  attr_reader :id
-  def initialize(id:)
-    @id = id
-  end
-end
-
 describe CoffeeReadyEvent do
   it_should_behave_like :an_event, {id: 1}
-end
-
-class DrinkPouredEvent < Event
-  attr_reader :beverage_type
-  def initialize(beverage_type:)
-    @beverage_type = beverage_type
-  end
 end
 
 describe DrinkPouredEvent do
   it_should_behave_like :an_event, {beverage_type: 'tea'}
 end
-
-class DrinkDrunkEvent < Event; end
 
 describe DrinkDrunkEvent do
   it_should_behave_like :an_event
@@ -56,7 +40,6 @@ describe "event pipeline" do
 
     DrinkPouredEvent.subscribe do |drink_poured|
       expect(drink_poured.beverage_type).to eq("coffee")
-      # raise 'it is not good'
       DrinkDrunkEvent.publish!
     end
 
@@ -66,44 +49,6 @@ describe "event pipeline" do
     end
 
     expect { CoffeeReadyEvent.publish!(id: 1) }.to change { @drink_was_drunk }.from(false).to(true)
-  end
-end
-
-class Drink
-  attr_accessor :id, :state
-
-  def initialize(id:)
-    @id = id
-    @state = :unprepared
-  end
-
-  def self.find(id)
-    @drinks ||= {}
-    @drinks[id] ||= Drink.new(id: id)
-  end
-end
-
-class DrinkController
-  def prepare!(id:)
-    @drink = Drink.find(id)
-    @drink.state = :prepared
-    CoffeeReadyEvent.publish!(id: id)
-  end
-end
-
-class DrinkObserver
-  def ready(event)
-    drinks_readied; @drinks_readied << event.id
-  end
-
-  def poured(event)
-  end
-
-  def drunk(event)
-  end
-
-  def drinks_readied
-    @drinks_readied ||= []
   end
 end
 
