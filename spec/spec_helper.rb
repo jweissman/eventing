@@ -1,4 +1,5 @@
 require 'rspec'
-require 'eventing/version'
+require 'eventing'
+require 'pry'
 
 include Eventing

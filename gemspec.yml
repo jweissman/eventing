@@ -1,6 +1,6 @@
 name: eventing
-summary: "TODO: Summary"
-description: "TODO: Description"
+summary: "messaging subsystem for ruby"
+description: "tiny pubsub"
 license: MIT
 authors: Joseph Weissman
 email: jweissman1986@gmail.com
